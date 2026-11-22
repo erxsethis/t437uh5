@@ -4041,32 +4041,55 @@ Library.Watermark = function(Self, Params)
                     BackgroundColor3 = Library.Theme["Text"]
                 }):AddToTheme({TextColor3 = 'Inactive Text'})
                 
-                Items["Pages"] = Library:Create("Frame", {
-                    Name = "\0",
-                    Parent = Items["Top"].Instance,
-                    AnchorPoint = Vector2.new(1, 0),
-                    BackgroundTransparency = 1,
-                    Position = UDim2.new(1, 0, 0, 0),
-                    Size = UDim2.new(0, 0, 1, 0),
-                    BorderSizePixel = 0,
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    BackgroundColor3 = Library.Theme["Text"]
-                })
-                
-                Library:Create("UIPadding", {
-                    Name = "\0",
-                    Parent = Items["Pages"].Instance,
-                    PaddingRight = UDim.new(0, 10)
-                })
+Items["Pages"] = Library:Create("ScrollingFrame", {
+    Name = "\0",
+    Parent = Items["Top"].Instance,
+    AnchorPoint = Vector2.new(1, 0),
+    BackgroundTransparency = 1,
+    Position = UDim2.new(1, 0, 0, 0),
+    Size = UDim2.new(0, 0, 1, 0),
+    CanvasSize = UDim2.new(0, 0, 1, 0),
+    BorderSizePixel = 0,
+    AutomaticSize = Enum.AutomaticSize.X,
+    AutomaticCanvasSize = Enum.AutomaticSize.X,
+    ScrollingDirection = Enum.ScrollingDirection.X,
+    ScrollBarThickness = 0,
+    ScrollBarImageTransparency = 0,
+    BackgroundColor3 = Library.Theme["Text"]
+}):AddToTheme({ScrollBarImageColor3 = 'Accent'})
 
-                Library:Create("UIListLayout", {
-                    Name = "\0",
-                    Parent = Items["Pages"].Instance,
-                    VerticalAlignment = Enum.VerticalAlignment.Center,
-                    FillDirection = Enum.FillDirection.Horizontal,
-                    Padding = UDim.new(0, 10),
-                    SortOrder = Enum.SortOrder.LayoutOrder
-                })        
+Library:Create("UIPadding", {
+    Name = "\0",
+    Parent = Items["Pages"].Instance,
+    PaddingRight = UDim.new(0, 10)
+})
+
+local PagesLayout = Library:Create("UIListLayout", {
+    Name = "\0",
+    Parent = Items["Pages"].Instance,
+    VerticalAlignment = Enum.VerticalAlignment.Center,
+    FillDirection = Enum.FillDirection.Horizontal,
+    Padding = UDim.new(0, 10),
+    SortOrder = Enum.SortOrder.LayoutOrder
+})
+
+local MaxPagesWidth = 300
+
+local UpdatePagesSize = function()
+    local ContentWidth = PagesLayout.Instance.AbsoluteContentSize.X + 10
+
+    if ContentWidth <= MaxPagesWidth then
+        Items["Pages"].Instance.AutomaticSize = Enum.AutomaticSize.X
+        Items["Pages"].Instance.ScrollBarThickness = 0
+    else
+        Items["Pages"].Instance.AutomaticSize = Enum.AutomaticSize.None
+        Items["Pages"].Instance.Size = UDim2.new(0, MaxPagesWidth, 1, 0)
+        Items["Pages"].Instance.ScrollBarThickness = 4
+    end
+end
+
+Library:Connect(PagesLayout.Instance:GetPropertyChangedSignal("AbsoluteContentSize"), UpdatePagesSize)
+UpdatePagesSize() 
                 
                 Items["Content"] = Library:Create("Frame", {
                     Name = "\0",
