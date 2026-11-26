@@ -2630,10 +2630,6 @@ end
                     Key = Keybind.Key,
                     Toggled = Keybind.Toggled
                 }
-    
-                if Data.Callback then 
-                    Library:SafeCall(Data.Callback, Keybind.Toggled)
-                end
 
                 if ListItem then
                     ListItem:SetStatus(Keybind.Toggled)
@@ -2649,10 +2645,26 @@ end
                 Callback = function(Value)
                     Keybind.Mode = Value
 
-                    Keybind:SetMode()
+                    if Value == "Always" then
+                        if not Keybind.Toggled then
+                            Keybind:Press(true)
+                        else
+                            Keybind:SetMode()
+                        end
+                    else
+                        if Keybind.Toggled then
+                            Keybind.Toggled = false
+                            Keybind:SetMode()
+                            if Data.Callback then
+                                Library:SafeCall(Data.Callback, false)
+                            end
+                        else
+                            Keybind:SetMode()
+                        end
+                    end
 
-                    if Value == "Always" then 
-                        Keybind:Press(true)
+                    if Data.OnChanged then
+                        Library:SafeCall(Data.OnChanged, Keybind.Key, Keybind.Mode)
                     end
                 end
             })
@@ -2708,13 +2720,13 @@ end
                         Key = Keybind.Key,
                         Toggled = Keybind.Toggled
                     }
-    
-                    if Data.Callback then 
-                        Library:SafeCall(Data.Callback, Keybind.Toggled)
-                    end
 
                     if ListItem then
                         ListItem:Set(Keybind.Name, Keybind.Value)
+                    end
+
+                    if Data.OnChanged then
+                        Library:SafeCall(Data.OnChanged, Keybind.Key, Keybind.Mode)
                     end
                 elseif type(Key) == "table" then
                     local RealKey = Key.Key == "Backspace" and "None" or Key.Key
@@ -2722,10 +2734,8 @@ end
     
                     if Key.Mode then
                         Keybind.Mode = Key.Mode
-                        Keybind:SetMode()
                     else
                         Keybind.Mode = "Toggle"
-                        Keybind:SetMode()
                     end
     
                     local KeyString = Keys[Keybind.Key] or string.gsub(tostring(RealKey), "Enum.", "") or RealKey
@@ -2735,21 +2745,31 @@ end
     
                     Keybind.Value = TextToDisplay
                     Items["KeyButton"].Instance.Text = TextToDisplay
-    
-                    if Data.Callback then 
-                        Library:SafeCall(Data.Callback, Keybind.Toggled)
+
+                    Keybind:SetMode()
+
+                    if Keybind.Mode == "Always" and not Keybind.Toggled then
+                        Keybind:Press(true)
                     end
 
                     if ListItem then
                         ListItem:Set(Keybind.Name, Keybind.Value)
                         ListItem:SetStatus(Keybind.Toggled)
                     end
+
+                    if Data.OnChanged then
+                        Library:SafeCall(Data.OnChanged, Keybind.Key, Keybind.Mode)
+                    end
                 elseif table.find({"Toggle", "Hold", "Always"}, Key) then
                     Keybind.Mode = Key
                     Keybind:SetMode()
-    
-                    if Data.Callback then 
-                        Library:SafeCall(Data.Callback, Keybind.Toggled)
+
+                    if Keybind.Mode == "Always" and not Keybind.Toggled then
+                        Keybind:Press(true)
+                    end
+
+                    if Data.OnChanged then
+                        Library:SafeCall(Data.OnChanged, Keybind.Key, Keybind.Mode)
                     end
                 end
 
@@ -4640,6 +4660,7 @@ end
             end)
 
             function Toggle:Set(Bool)
+                Bool = Bool == true
                 Toggle.Value = Bool 
 
                 if Bool then 
@@ -4703,6 +4724,7 @@ end
                     Flag = Data.Flag or Data.flag or (Data.Name or Data.name or Toggle.Name),
                     Default = Data.Default or Data.default or Enum.KeyCode.E,
                     Callback = Data.Callback or Data.callback or function() end,
+                    OnChanged = Data.OnChanged or Data.onchanged,
                     Mode = Data.Mode or Data.mode or "Toggle",
 
                     Window = Toggle.Window,
@@ -4718,7 +4740,8 @@ end
                     Flag = Keybind.Flag,
                     Default = Keybind.Default,
                     Mode = Keybind.Mode,
-                    Callback = Keybind.Callback
+                    Callback = Keybind.Callback,
+                    OnChanged = Keybind.OnChanged
                 })
 
                 return NewKeybind
@@ -5953,6 +5976,7 @@ end
                     Flag = Data.Flag or Data.flag or (Data.Name or Data.name or Label.Name),
                     Default = Data.Default or Data.default or Enum.KeyCode.E,
                     Callback = Data.Callback or Data.callback or function() end,
+                    OnChanged = Data.OnChanged or Data.onchanged,
                     Mode = Data.Mode or Data.mode or "Toggle",
 
                     Window = Label.Window,
@@ -5968,7 +5992,8 @@ end
                     Flag = Keybind.Flag,
                     Default = Keybind.Default,
                     Mode = Keybind.Mode,
-                    Callback = Keybind.Callback
+                    Callback = Keybind.Callback,
+                    OnChanged = Keybind.OnChanged
                 })
 
                 return NewKeybind
@@ -6898,9 +6923,9 @@ end
                     Flag = "MenuKeybind",
                     Default = Enum.KeyCode.X,
                     Mode = "Toggle",
-                    Callback = function()
-                        if Library.Flags["MenuKeybind"] and Library.Flags["MenuKeybind"].Key then
-                            Library.MenuKeybind = Library.Flags["MenuKeybind"].Key
+                    OnChanged = function(key)
+                        if key then
+                            Library.MenuKeybind = key
                         end
                     end
                 })
